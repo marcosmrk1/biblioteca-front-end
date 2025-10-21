@@ -1,4 +1,6 @@
 <script setup>
+  import { reactive, ref } from 'vue'
+
   const props = defineProps({
     buttonCancel: {
       type: Object,
@@ -16,52 +18,6 @@
     },
   })
 </script>
-<template>
-  <div class="book-form">
-    <h2>Cadastro de Livro</h2>
-    <form @submit.prevent="submitForm">
-      <div class="form-group">
-        <label for="title">Título do Livro</label>
-        <input
-          type="text"
-          id="title"
-          v-model="book.title"
-          class="form-control"
-          required
-        />
-      </div>
-
-      <div class="form-group">
-        <label for="publishDate">Data de Publicação</label>
-        <input
-          type="date"
-          id="publishDate"
-          v-model="book.publishDate"
-          class="form-control"
-          required
-        />
-      </div>
-
-      <div class="form-group">
-        <label for="author">Autor</label>
-        <select id="author" v-model="book.authorId" class="form-control" required>
-          <option value="" disabled>Selecione um autor</option>
-          <option v-for="author in authors" :key="author.id" :value="author.id">
-            {{ author.name }}
-          </option>
-        </select>
-      </div>
-
-      <div class="form-actions">
-        <button type="submit" class="btn btn-primary">Salvar</button>
-        <button type="button" class="btn btn-secondary" @click="resetForm">
-          Cancelar
-        </button>
-      </div>
-    </form>
-  </div>
-</template>
-
 <script>
   export default {
     name: 'formBook',
@@ -120,6 +76,51 @@
     // }
   }
 </script>
+<template>
+  <div class="book-form">
+    <h2>Cadastro de Livro</h2>
+    <form @submit.prevent="submitForm">
+      <div class="form-group">
+        <label for="title">Título do Livro</label>
+        <input
+          type="text"
+          id="title"
+          v-model="book.title"
+          class="form-control"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="publishDate">Data de Publicação</label>
+        <input
+          type="date"
+          id="publishDate"
+          v-model="book.publishDate"
+          class="form-control"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="author">Autor</label>
+        <select id="author" v-model="book.authorId" class="form-control" required>
+          <option value="" disabled>Selecione um autor</option>
+          <option v-for="author in authors" :key="author.id" :value="author.id">
+            {{ author.name }}
+          </option>
+        </select>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Salvar</button>
+        <button type="button" class="btn btn-secondary" @click="resetForm">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  </div>
+</template>
 
 <style scoped>
   .book-form {

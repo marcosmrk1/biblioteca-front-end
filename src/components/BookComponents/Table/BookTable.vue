@@ -1,14 +1,17 @@
-<script setup>
-  import { ref, watch } from 'vue'
+<script setup lang="ts">
+  import { ref, watch, onMounted } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { OPEN_MODAL_FORM_BOOK } from '../../../@URLParams/BookParams'
   import ModalGeneric from '../../../GenericComponents/ModalGeneric.vue'
   import BookForm from '../Form/BookForm.vue'
+  import { useBooksStore } from '../../../api/store/bookStore/useGetBookStore'
+  import { IResponse } from '../../../@Interface/apiInterface/IResponse'
+  import { IMockBook } from '../../../@Interface/models/IMockBook'
 
   const router = useRouter()
   const route = useRoute()
   const showModal = ref(false)
-
+  const dataForBooks = ref<IResponse<IMockBook> | null>(null)
   watch(
     () => route.query[OPEN_MODAL_FORM_BOOK],
     (val) => {
@@ -16,6 +19,12 @@
     },
     { immediate: true },
   )
+  const booksStore = useBooksStore()
+
+  onMounted(async () => {
+    const response = await booksStore.loadBooks()
+    dataForBooks.value = response
+  })
 
   function openModalFormBook() {
     router.push({
