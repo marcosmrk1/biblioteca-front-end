@@ -62,8 +62,6 @@ export async function useGetBookApi(): Promise<IResponse<IMockBook>> {
     }
 
     return response
-
-    // return response
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error)
 

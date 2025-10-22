@@ -29,7 +29,6 @@
     }, 300)
   }
 
-  // Auto close após duration
   if (props.duration > 0) {
     setTimeout(close, props.duration)
   }
