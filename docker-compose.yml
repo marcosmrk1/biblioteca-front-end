@@ -1,13 +1,13 @@
 services:
   vue-dev:
-    container_name: biblioteca-vue-dev
+    container_name: biblioteca-vue
     build:
       context: .
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
     ports:
-      - '5173:5173' # mapeia a porta padrão do Vite
+      - '5173:5173'
     volumes:
-      - .:/app # monta o código local no container
+      - .:/app
 
     environment:
-      - CHOKIDAR_USEPOLLING=true # garante que o Vite detecte mudanças em tempo real
+      - CHOKIDAR_USEPOLLING=true

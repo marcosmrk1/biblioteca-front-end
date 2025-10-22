@@ -68,8 +68,6 @@ export const usePostBookStore = defineStore('postBook', {
         const updatedBooks = [...existingBooks, newBook]
 
         localStorage.setItem(BOOKS_STORAGE_KEY, JSON.stringify(updatedBooks))
-
-        console.log('Book saved to localStorage:', newBook)
       } catch (error) {
         console.error('Error saving to localStorage:', error)
       }
