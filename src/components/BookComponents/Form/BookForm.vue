@@ -1,81 +1,112 @@
-<script setup>
-  import { reactive, ref } from 'vue'
+<script setup lang="ts">
+  import { ref, onMounted } from 'vue'
+  import { useAuthorsStore } from '../../../store/authorStore/useGetAuthorStore'
+  import { usePostBookStore } from '../../../store/bookStore/usePostBookStore'
+  import { useBooksStore } from '../../../store/bookStore/useGetBookStore'
+  import LoadingGeneric from '../../../GenericComponents/LoadingGeneric.vue'
+  import AlertGeneric from '../../../GenericComponents/AlertGeneric.vue'
 
-  const props = defineProps({
-    buttonCancel: {
-      type: Object,
-      default: () => ({
-        text: 'Cancelar',
-        func: null,
-      }),
-    },
-    buttonSave: {
-      type: Object,
-      default: () => ({
-        text: 'Salvar',
-        func: null,
-      }),
-    },
+  interface Props {
+    buttonCancel?: {
+      text: string
+      func: (() => void) | null
+    }
+    buttonSave?: {
+      text: string
+      func: (() => void) | null
+    }
+  }
+
+  const props = withDefaults(defineProps<Props>(), {
+    buttonCancel: () => ({
+      text: 'Cancelar',
+      func: null,
+    }),
+    buttonSave: () => ({
+      text: 'Salvar',
+      func: null,
+    }),
   })
-</script>
-<script>
-  export default {
-    name: 'formBook',
-    data() {
-      return {
-        book: {
-          title: '',
-          publishDate: '',
-          authorId: '',
-        },
-        authors: [
-          // Aqui você deve carregar a lista de autores da sua API
-          // Exemplo:
-          { id: 1, name: 'Gabriel García Márquez' },
-          { id: 2, name: 'Machado de Assis' },
-          { id: 3, name: 'Clarice Lispector' },
-        ],
-      }
-    },
-    methods: {
-      submitForm() {
-        // Validar formulário
-        if (this.validateForm()) {
-          // Emitir evento para o componente pai com os dados do livro
-          this.$emit('save-book', { ...this.book })
 
-          // Limpar formulário após envio bem-sucedido
-          this.resetForm()
-        }
-      },
-      resetForm() {
-        this.book = {
-          title: '',
-          publishDate: '',
-          authorId: '',
-        }
-      },
-      validateForm() {
-        // Aqui você pode adicionar validações adicionais se necessário
-        return true
-      },
-    },
-    // Se precisar carregar os autores de uma API:
-    // created() {
-    //   this.fetchAuthors();
-    // },
-    // methods: {
-    //   async fetchAuthors() {
-    //     try {
-    //       const response = await fetch('sua-api/authors');
-    //       this.authors = await response.json();
-    //     } catch (error) {
-    //       console.error('Erro ao carregar autores:', error);
-    //     }
-    //   }
-    // }
+  const authorsStore = useAuthorsStore()
+  const postBookStore = usePostBookStore()
+  const booksStore = useBooksStore()
+
+  const showToastError = ref(false)
+  const showToastSuccess = ref(false)
+
+  const book = ref({
+    title: '',
+    publishDate: '',
+    authorId: null as number | null,
+  })
+
+  onMounted(async () => {
+    await authorsStore.loadAuthors()
+
+    if (!authorsStore.success && !authorsStore.loading) {
+      showToastError.value = true
+    }
+  })
+
+  async function submitForm() {
+    if (!validateForm()) return
+
+    const selectedAuthor = authorsStore.data?.find(
+      (author) => author.id === book.value.authorId,
+    )
+
+    if (!selectedAuthor) {
+      postBookStore.message = 'Autor não encontrado'
+      postBookStore.errors = ['Selecione um autor válido']
+      showToastError.value = true
+      return
+    }
+
+    // Enviar objeto completo do autor
+    const response = await postBookStore.createBook({
+      title: book.value.title,
+      publishDate: book.value.publishDate,
+      author: selectedAuthor,
+    })
+
+    if (response.success) {
+      showToastSuccess.value = true
+      resetForm()
+
+      await booksStore.loadBooks()
+
+      if (props.buttonCancel.func) {
+        setTimeout(() => {
+          props.buttonCancel.func?.()
+        }, 1500)
+      }
+    } else {
+      showToastError.value = true
+    }
+  }
+
+  function resetForm() {
+    book.value = {
+      title: '',
+      publishDate: '',
+      authorId: null,
+    }
+  }
+
+  function validateForm() {
+    return book.value.title && book.value.publishDate && book.value.authorId
+  }
+
+  function closeToastError() {
+    showToastError.value = false
+  }
+
+  function closeToastSuccess() {
+    showToastSuccess.value = false
   }
 </script>
+
 <template>
   <div class="book-form">
     <h2>Cadastro de Livro</h2>
@@ -87,6 +118,7 @@
           id="title"
           v-model="book.title"
           class="form-control"
+          :disabled="postBookStore.loading"
           required
         />
       </div>
@@ -98,28 +130,79 @@
           id="publishDate"
           v-model="book.publishDate"
           class="form-control"
+          :disabled="postBookStore.loading"
           required
         />
       </div>
 
       <div class="form-group">
         <label for="author">Autor</label>
-        <select id="author" v-model="book.authorId" class="form-control" required>
-          <option value="" disabled>Selecione um autor</option>
-          <option v-for="author in authors" :key="author.id" :value="author.id">
+        <div v-if="authorsStore.loading" class="select-loading">
+          <LoadingGeneric size="small" message="Carregando autores..." />
+        </div>
+        <div v-else-if="!authorsStore.success" class="select-error">
+          <p style="color: red; margin: 0">❌ Erro ao carregar autores</p>
+        </div>
+        <select
+          v-else
+          id="author"
+          v-model="book.authorId"
+          class="form-control"
+          :disabled="postBookStore.loading"
+          required
+        >
+          <option :value="null" disabled>Selecione um autor</option>
+          <option
+            v-for="author in authorsStore.data"
+            :key="author.id"
+            :value="author.id"
+          >
             {{ author.name }}
           </option>
         </select>
       </div>
 
       <div class="form-actions">
-        <button type="submit" class="btn btn-primary">Salvar</button>
-        <button type="button" class="btn btn-secondary" @click="resetForm">
-          Cancelar
+        <button
+          type="submit"
+          class="btn btn-primary"
+          :disabled="
+            authorsStore.loading || !authorsStore.success || postBookStore.loading
+          "
+        >
+          <span v-if="postBookStore.loading">Salvando...</span>
+          <span v-else>{{ buttonSave.text }}</span>
+        </button>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          @click="resetForm"
+          :disabled="authorsStore.loading || postBookStore.loading"
+        >
+          {{ buttonCancel.text }}
         </button>
       </div>
     </form>
   </div>
+
+  <AlertGeneric
+    v-if="showToastError"
+    type="error"
+    :message="postBookStore.message || authorsStore.message"
+    :errors="
+      postBookStore.errors.length > 0 ? postBookStore.errors : authorsStore.errors
+    "
+    :duration="5000"
+    @close="closeToastError"
+  />
+
+  <AlertGeneric
+    v-if="showToastSuccess"
+    type="success"
+    :message="postBookStore.message"
+    :duration="3000"
+    @close="closeToastSuccess"
+  />
 </template>
 
 <style scoped>
@@ -146,6 +229,20 @@
     border-radius: 4px;
   }
 
+  .form-control:disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+  }
+
+  .select-loading,
+  .select-error {
+    padding: 10px;
+    text-align: center;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+  }
+
   .form-actions {
     margin-top: 20px;
     display: flex;
@@ -159,6 +256,12 @@
     border: none;
     border-radius: 4px;
     cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   .btn-primary {

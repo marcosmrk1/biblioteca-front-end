@@ -4,14 +4,15 @@
   import { OPEN_MODAL_FORM_BOOK } from '../../../@URLParams/BookParams'
   import ModalGeneric from '../../../GenericComponents/ModalGeneric.vue'
   import BookForm from '../Form/BookForm.vue'
-  import { useBooksStore } from '../../../api/store/bookStore/useGetBookStore'
-  import { IResponse } from '../../../@Interface/apiInterface/IResponse'
-  import { IMockBook } from '../../../@Interface/models/IMockBook'
+  import AlertGeneric from '../../../GenericComponents/AlertGeneric.vue'
+  import { useBooksStore } from '../../../store/bookStore/useGetBookStore'
+  import LoadingGeneric from '../../../GenericComponents/LoadingGeneric.vue'
 
   const router = useRouter()
   const route = useRoute()
   const showModal = ref(false)
-  const dataForBooks = ref<IResponse<IMockBook> | null>(null)
+  const showToast = ref(false)
+
   watch(
     () => route.query[OPEN_MODAL_FORM_BOOK],
     (val) => {
@@ -19,11 +20,15 @@
     },
     { immediate: true },
   )
+
   const booksStore = useBooksStore()
 
   onMounted(async () => {
-    const response = await booksStore.loadBooks()
-    dataForBooks.value = response
+    await booksStore.loadBooks()
+
+    if (!booksStore.success && !booksStore.loading) {
+      showToast.value = true
+    }
   })
 
   function openModalFormBook() {
@@ -33,6 +38,24 @@
         [OPEN_MODAL_FORM_BOOK]: 'true',
       },
     })
+  }
+
+  function closeToast() {
+    showToast.value = false
+  }
+
+  function closeModal() {
+    router.push({
+      query: {
+        ...route.query,
+        [OPEN_MODAL_FORM_BOOK]: undefined,
+      },
+    })
+  }
+
+  // Função para formatar autores
+  function formatAuthors(authors: Array<{ id: number; name: string }>) {
+    return authors.map((author) => author.name).join(', ')
   }
 </script>
 
@@ -48,27 +71,47 @@
         </tr>
       </thead>
       <tbody>
-        <tr>
-          <td>Dom Casmurro</td>
-          <td>1899</td>
-          <td>Machado de Assis</td>
+        <tr v-if="booksStore.loading">
+          <td colspan="3" style="text-align: center; padding: 20px">
+            <LoadingGeneric message="Carregando livros..." />
+          </td>
         </tr>
-        <tr>
-          <td>O Pequeno Príncipe</td>
-          <td>1943</td>
-          <td>Antoine de Saint-Exupéry</td>
+        <tr v-else-if="!booksStore.success">
+          <td colspan="3" style="text-align: center; padding: 20px; color: red">
+            ⚠️ Erro ao carregar livros
+          </td>
         </tr>
-        <tr>
-          <td>Capitães da Areia</td>
-          <td>1937</td>
-          <td>Jorge Amado</td>
+        <tr v-else-if="!booksStore.data || booksStore.data.length === 0">
+          <td colspan="3" style="text-align: center; padding: 20px">
+            Nenhum livro encontrado
+          </td>
+        </tr>
+        <tr v-else v-for="book in booksStore.data" :key="book.id">
+          <td>{{ book.title }}</td>
+          <td>{{ book.publicationDate }}</td>
+          <td>{{ formatAuthors(book.author) }}</td>
         </tr>
       </tbody>
     </table>
   </div>
+
+  <AlertGeneric
+    v-if="showToast"
+    type="error"
+    :message="booksStore.message"
+    :errors="booksStore.errors"
+    :duration="5000"
+    @close="closeToast"
+  />
+
   <div>
     <ModalGeneric :model-value="showModal" :name-modal="OPEN_MODAL_FORM_BOOK">
-      <BookForm />
+      <BookForm
+        :button-cancel="{
+          text: 'Cancelar',
+          func: closeModal,
+        }"
+      />
     </ModalGeneric>
   </div>
 </template>
