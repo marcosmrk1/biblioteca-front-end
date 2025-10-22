@@ -1,15 +1,8 @@
 import { defineStore } from 'pinia'
 import { useEditBookApi } from '../../response/bookApi/useEdit'
 import { IResponse } from '../../@Interface/apiInterface/IResponse'
-import { IMockBook } from '../../@Interface/models/IMockBook'
+import { BookEditData, IMockBook } from '../../@Interface/models/IMockBook'
 import { IMockBookAuthor } from '../../@Interface/models/IMockAuthors'
-
-interface BookEditData {
-  id: number
-  title: string
-  publishDate: string
-  author: IMockBookAuthor
-}
 
 const BOOKS_STORAGE_KEY = 'books'
 const EDITED_BOOKS_KEY = 'editedBooks'

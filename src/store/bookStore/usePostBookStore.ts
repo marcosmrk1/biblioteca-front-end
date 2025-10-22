@@ -1,14 +1,7 @@
 import { defineStore } from 'pinia'
 import { usePostBookApi } from '../../response/bookApi/usePost'
 import { IResponse } from '../../@Interface/apiInterface/IResponse'
-import { IMockBook } from '../../@Interface/models/IMockBook'
-import { IMockBookAuthor } from '../../@Interface/models/IMockAuthors'
-
-interface BookFormData {
-  title: string
-  publishDate: string
-  author: IMockBookAuthor
-}
+import { BookFormData, IMockBook } from '../../@Interface/models/IMockBook'
 
 const BOOKS_STORAGE_KEY = 'books'
 

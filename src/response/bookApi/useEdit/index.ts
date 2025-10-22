@@ -1,13 +1,6 @@
 import { IResponse } from '../../../@Interface/apiInterface/IResponse'
-import { IMockBook } from '../../../@Interface/models/IMockBook'
+import { BookEditData, IMockBook } from '../../../@Interface/models/IMockBook'
 import { IMockBookAuthor } from '../../../@Interface/models/IMockAuthors'
-
-interface BookEditData {
-  id: number
-  title: string
-  publishDate: string
-  author: IMockBookAuthor
-}
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
