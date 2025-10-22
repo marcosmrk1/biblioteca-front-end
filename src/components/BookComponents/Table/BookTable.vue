@@ -7,16 +7,22 @@
   import AlertGeneric from '../../../GenericComponents/AlertGeneric.vue'
   import { useBooksStore } from '../../../store/bookStore/useGetBookStore'
   import LoadingGeneric from '../../../GenericComponents/LoadingGeneric.vue'
+  import { IMockBook } from '../../../@Interface/models/IMockBook'
 
   const router = useRouter()
   const route = useRoute()
   const showModal = ref(false)
   const showToast = ref(false)
+  const bookToEdit = ref<IMockBook | null>(null)
 
   watch(
     () => route.query[OPEN_MODAL_FORM_BOOK],
     (val) => {
       showModal.value = val === 'true'
+      // Resetar bookToEdit quando fechar o modal
+      if (!showModal.value) {
+        bookToEdit.value = null
+      }
     },
     { immediate: true },
   )
@@ -32,6 +38,17 @@
   })
 
   function openModalFormBook() {
+    bookToEdit.value = null // Resetar para modo criação
+    router.push({
+      query: {
+        ...route.query,
+        [OPEN_MODAL_FORM_BOOK]: 'true',
+      },
+    })
+  }
+
+  function openEditModal(book: IMockBook) {
+    bookToEdit.value = book // Definir livro para edição
     router.push({
       query: {
         ...route.query,
@@ -45,6 +62,7 @@
   }
 
   function closeModal() {
+    bookToEdit.value = null // Limpar ao fechar
     router.push({
       query: {
         ...route.query,
@@ -68,21 +86,22 @@
           <th>Título do Livro</th>
           <th>Data de Publicação</th>
           <th>Autores</th>
+          <th style="width: 100px">Ações</th>
         </tr>
       </thead>
       <tbody>
         <tr v-if="booksStore.loading">
-          <td colspan="3" style="text-align: center; padding: 20px">
+          <td colspan="4" style="text-align: center; padding: 20px">
             <LoadingGeneric message="Carregando livros..." />
           </td>
         </tr>
         <tr v-else-if="!booksStore.success">
-          <td colspan="3" style="text-align: center; padding: 20px; color: red">
+          <td colspan="4" style="text-align: center; padding: 20px; color: red">
             ⚠️ Erro ao carregar livros
           </td>
         </tr>
         <tr v-else-if="!booksStore.data || booksStore.data.length === 0">
-          <td colspan="3" style="text-align: center; padding: 20px">
+          <td colspan="4" style="text-align: center; padding: 20px">
             Nenhum livro encontrado
           </td>
         </tr>
@@ -90,6 +109,11 @@
           <td>{{ book.title }}</td>
           <td>{{ book.publicationDate }}</td>
           <td>{{ formatAuthors(book.author) }}</td>
+          <td>
+            <button class="btn-edit" @click="openEditModal(book)" title="Editar">
+              ✏️
+            </button>
+          </td>
         </tr>
       </tbody>
     </table>
@@ -107,6 +131,7 @@
   <div>
     <ModalGeneric :model-value="showModal" :name-modal="OPEN_MODAL_FORM_BOOK">
       <BookForm
+        :book-to-edit="bookToEdit"
         :button-cancel="{
           text: 'Cancelar',
           func: closeModal,
@@ -118,7 +143,7 @@
 
 <style scoped>
   .table-container {
-    max-width: 800px;
+    max-width: 900px;
     margin: 32px auto;
     padding: 16px;
     background: #f9f9f9;
@@ -156,5 +181,21 @@
   }
   .book-table tr:nth-child(even) {
     background: #f1f7ff;
+  }
+  .btn-edit {
+    background-color: #ff9800;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.2s;
+  }
+  .btn-edit:hover {
+    background-color: #f57c00;
+  }
+  .btn-edit:active {
+    background-color: #e65100;
   }
 </style>

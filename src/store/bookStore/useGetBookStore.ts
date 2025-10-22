@@ -4,6 +4,7 @@ import { IMockBook } from '../../@Interface/models/IMockBook'
 import { IResponse } from '../../@Interface/apiInterface/IResponse'
 
 const BOOKS_STORAGE_KEY = 'books'
+const EDITED_BOOKS_KEY = 'editedBooks' // Nova chave para livros editados
 
 export const useBooksStore = defineStore('books', {
   state: (): IResponse<IMockBook> => ({
@@ -26,12 +27,29 @@ export const useBooksStore = defineStore('books', {
       try {
         const response = await useGetBookApi()
 
-        // Buscar livros salvos no localStorage
+        // Buscar livros criados localmente
         const savedBooksJson = localStorage.getItem(BOOKS_STORAGE_KEY)
         const savedBooks: IMockBook[] = savedBooksJson ? JSON.parse(savedBooksJson) : []
 
-        // Concatenar livros da API com os salvos localmente
-        const allBooks = response.data ? [...response.data, ...savedBooks] : savedBooks
+        // Buscar livros editados
+        const editedBooksJson = localStorage.getItem(EDITED_BOOKS_KEY)
+        const editedBooks: IMockBook[] = editedBooksJson
+          ? JSON.parse(editedBooksJson)
+          : []
+
+        // Mesclar livros da API com as edições
+        let allBooks = response.data ? [...response.data] : []
+
+        // Substituir livros da API que foram editados
+        editedBooks.forEach((editedBook) => {
+          const index = allBooks.findIndex((book) => book.id === editedBook.id)
+          if (index !== -1) {
+            allBooks[index] = editedBook
+          }
+        })
+
+        // Adicionar livros criados localmente
+        allBooks = [...allBooks, ...savedBooks]
 
         this.data = allBooks
         this.success = response.success
@@ -46,6 +64,7 @@ export const useBooksStore = defineStore('books', {
         console.log('Books loaded:', {
           fromAPI: response.data?.length || 0,
           fromLocalStorage: savedBooks.length,
+          edited: editedBooks.length,
           total: allBooks.length,
         })
 
