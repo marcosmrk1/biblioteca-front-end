@@ -1,125 +1,304 @@
-<script setup>
-  const props = defineProps({
-    buttonCancel: {
-      type: Object,
-      default: () => ({
-        text: 'Cancelar',
-        func: null,
-      }),
-    },
-    buttonSave: {
-      type: Object,
-      default: () => ({
-        text: 'Salvar',
-        func: null,
-      }),
-    },
+<script setup lang="ts">
+  import { ref, onMounted, watch, computed } from 'vue'
+  import { useAuthorsStore } from '../../../store/authorStore/useGetAuthorStore'
+  import { usePostBookStore } from '../../../store/bookStore/usePostBookStore'
+  import { useEditBookStore } from '../../../store/bookStore/useEditBookStore'
+  import { useBooksStore } from '../../../store/bookStore/useGetBookStore'
+  import LoadingGeneric from '../../../GenericComponents/LoadingGeneric.vue'
+  import AlertGeneric from '../../../GenericComponents/AlertGeneric.vue'
+  import { IMockBook } from '../../../@Interface/models/IMockBook'
+
+  interface Props {
+    buttonCancel?: {
+      text: string
+      func: (() => void) | null
+    }
+    buttonSave?: {
+      text: string
+      func: (() => void) | null
+    }
+    bookToEdit?: IMockBook | null
+  }
+
+  const props = withDefaults(defineProps<Props>(), {
+    buttonCancel: () => ({
+      text: 'Cancelar',
+      func: null,
+    }),
+    buttonSave: () => ({
+      text: 'Salvar',
+      func: null,
+    }),
+    bookToEdit: null,
   })
+
+  const authorsStore = useAuthorsStore()
+  const postBookStore = usePostBookStore()
+  const editBookStore = useEditBookStore()
+  const booksStore = useBooksStore()
+
+  const showToastError = ref(false)
+  const showToastSuccess = ref(false)
+  const isEditMode = ref(false)
+  const authorSelectRef = ref<HTMLSelectElement | null>(null)
+
+  const book = ref({
+    id: null as number | null,
+    title: '',
+    publishDate: '',
+    authorId: null as number | null,
+  })
+
+  onMounted(async () => {
+    await authorsStore.loadAuthors()
+
+    if (!authorsStore.success && !authorsStore.loading) {
+      showToastError.value = true
+    }
+
+    if (props.bookToEdit) {
+      loadBookData(props.bookToEdit)
+    }
+
+    setupCustomValidationMessages()
+  })
+
+  function setupCustomValidationMessages() {
+    setTimeout(() => {
+      const titleInput = document.getElementById('title') as HTMLInputElement
+      const dateInput = document.getElementById('publishDate') as HTMLInputElement
+
+      if (titleInput) {
+        titleInput.addEventListener('invalid', () => {
+          titleInput.setCustomValidity('Preencha este campo.')
+        })
+        titleInput.addEventListener('input', () => {
+          titleInput.setCustomValidity('')
+        })
+      }
+
+      if (dateInput) {
+        dateInput.addEventListener('invalid', () => {
+          dateInput.setCustomValidity('Preencha este campo.')
+        })
+        dateInput.addEventListener('change', () => {
+          dateInput.setCustomValidity('')
+        })
+      }
+
+      if (authorSelectRef.value) {
+        authorSelectRef.value.addEventListener('invalid', () => {
+          authorSelectRef.value?.setCustomValidity('Selecione um  autor para cadastrar.')
+        })
+        authorSelectRef.value.addEventListener('change', () => {
+          authorSelectRef.value?.setCustomValidity('')
+        })
+      }
+    }, 100)
+  }
+
+  watch(
+    () => props.bookToEdit,
+    (newBook) => {
+      if (newBook) {
+        loadBookData(newBook)
+      } else {
+        resetForm()
+      }
+    },
+  )
+
+  function loadBookData(bookData: IMockBook) {
+    isEditMode.value = true
+    book.value = {
+      id: bookData.id,
+      title: bookData.title,
+      publishDate: bookData.publicationDate,
+      authorId: bookData.author[0]?.id || null,
+    }
+  }
+
+  async function submitForm() {
+    if (!validateForm()) return
+
+    const selectedAuthor = authorsStore.data?.find(
+      (author) => author.id === book.value.authorId,
+    )
+
+    if (!selectedAuthor) {
+      const activeStore = isEditMode.value ? editBookStore : postBookStore
+      activeStore.message = 'Autor não encontrado'
+      activeStore.errors = ['Selecione um autor válido']
+      showToastError.value = true
+      return
+    }
+
+    let response
+
+    if (isEditMode.value && book.value.id) {
+      response = await editBookStore.editBook({
+        id: book.value.id,
+        title: book.value.title,
+        publishDate: book.value.publishDate,
+        author: selectedAuthor,
+      })
+    } else {
+      response = await postBookStore.createBook({
+        title: book.value.title,
+        publishDate: book.value.publishDate,
+        author: selectedAuthor,
+      })
+    }
+
+    if (response.success) {
+      showToastSuccess.value = true
+      resetForm()
+
+      await booksStore.loadBooks()
+
+      if (props.buttonCancel.func) {
+        setTimeout(() => {
+          props.buttonCancel.func?.()
+        }, 1500)
+      }
+    } else {
+      showToastError.value = true
+    }
+  }
+
+  function resetForm() {
+    isEditMode.value = false
+    book.value = {
+      id: null,
+      title: '',
+      publishDate: '',
+      authorId: null,
+    }
+  }
+
+  function validateForm() {
+    return book.value.title && book.value.publishDate && book.value.authorId
+  }
+
+  function closeToastError() {
+    showToastError.value = false
+  }
+
+  function closeToastSuccess() {
+    showToastSuccess.value = false
+  }
+
+  const formTitle = computed(() =>
+    isEditMode.value ? 'Editar Livro' : 'Cadastro de Livro',
+  )
+  const saveButtonText = computed(() => {
+    if (isEditMode.value) {
+      return editBookStore.loading ? 'Atualizando...' : 'Atualizar'
+    }
+    return postBookStore.loading ? 'Salvando...' : 'Salvar'
+  })
+  const isLoading = computed(
+    () => postBookStore.loading || editBookStore.loading || authorsStore.loading,
+  )
+  const activeStore = computed(() => (isEditMode.value ? editBookStore : postBookStore))
 </script>
+
 <template>
   <div class="book-form">
-    <h2>Cadastro de Livro</h2>
+    <h2>{{ formTitle }}</h2>
     <form @submit.prevent="submitForm">
       <div class="form-group">
-        <label for="title">Título do Livro</label>
+        <label for="title">Título do Livro <span class="required">*</span></label>
         <input
           type="text"
           id="title"
           v-model="book.title"
           class="form-control"
+          :disabled="isLoading"
           required
+          placeholder="Digite o título do livro"
         />
       </div>
 
       <div class="form-group">
-        <label for="publishDate">Data de Publicação</label>
+        <label for="publishDate"
+          >Data de Publicação <span class="required">*</span></label
+        >
         <input
           type="date"
           id="publishDate"
           v-model="book.publishDate"
           class="form-control"
+          :disabled="isLoading"
           required
         />
       </div>
 
       <div class="form-group">
-        <label for="author">Autor</label>
-        <select id="author" v-model="book.authorId" class="form-control" required>
-          <option value="" disabled>Selecione um autor</option>
-          <option v-for="author in authors" :key="author.id" :value="author.id">
+        <label for="author">Autor <span class="required">*</span></label>
+        <div v-if="authorsStore.loading" class="select-loading">
+          <LoadingGeneric size="small" message="Carregando autores..." />
+        </div>
+        <div v-else-if="!authorsStore.success" class="select-error">
+          <p style="color: red; margin: 0">❌ Erro ao carregar autores</p>
+        </div>
+        <select
+          v-else
+          id="author"
+          ref="authorSelectRef"
+          v-model="book.authorId"
+          class="form-control"
+          :disabled="isLoading"
+          required
+        >
+          <option value="" disabled selected>Selecione um autor</option>
+          <option
+            v-for="author in authorsStore.data"
+            :key="author.id"
+            :value="author.id"
+          >
             {{ author.name }}
           </option>
         </select>
       </div>
 
       <div class="form-actions">
-        <button type="submit" class="btn btn-primary">Salvar</button>
-        <button type="button" class="btn btn-secondary" @click="resetForm">
-          Cancelar
+        <button
+          type="submit"
+          class="btn btn-primary"
+          :disabled="authorsStore.loading || !authorsStore.success || isLoading"
+        >
+          {{ saveButtonText }}
+        </button>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          @click="props.buttonCancel.func?.()"
+          :disabled="isLoading"
+        >
+          {{ buttonCancel.text }}
         </button>
       </div>
     </form>
   </div>
+
+  <AlertGeneric
+    v-if="showToastError"
+    type="error"
+    :message="activeStore.message || authorsStore.message"
+    :errors="activeStore.errors.length > 0 ? activeStore.errors : authorsStore.errors"
+    :duration="5000"
+    @close="closeToastError"
+  />
+
+  <AlertGeneric
+    v-if="showToastSuccess"
+    type="success"
+    :message="activeStore.message"
+    :duration="3000"
+    @close="closeToastSuccess"
+  />
 </template>
-
-<script>
-  export default {
-    name: 'formBook',
-    data() {
-      return {
-        book: {
-          title: '',
-          publishDate: '',
-          authorId: '',
-        },
-        authors: [
-          // Aqui você deve carregar a lista de autores da sua API
-          // Exemplo:
-          { id: 1, name: 'Gabriel García Márquez' },
-          { id: 2, name: 'Machado de Assis' },
-          { id: 3, name: 'Clarice Lispector' },
-        ],
-      }
-    },
-    methods: {
-      submitForm() {
-        // Validar formulário
-        if (this.validateForm()) {
-          // Emitir evento para o componente pai com os dados do livro
-          this.$emit('save-book', { ...this.book })
-
-          // Limpar formulário após envio bem-sucedido
-          this.resetForm()
-        }
-      },
-      resetForm() {
-        this.book = {
-          title: '',
-          publishDate: '',
-          authorId: '',
-        }
-      },
-      validateForm() {
-        // Aqui você pode adicionar validações adicionais se necessário
-        return true
-      },
-    },
-    // Se precisar carregar os autores de uma API:
-    // created() {
-    //   this.fetchAuthors();
-    // },
-    // methods: {
-    //   async fetchAuthors() {
-    //     try {
-    //       const response = await fetch('sua-api/authors');
-    //       this.authors = await response.json();
-    //     } catch (error) {
-    //       console.error('Erro ao carregar autores:', error);
-    //     }
-    //   }
-    // }
-  }
-</script>
 
 <style scoped>
   .book-form {
@@ -138,11 +317,37 @@
     font-weight: bold;
   }
 
+  .required {
+    color: #ef4444;
+    font-weight: bold;
+  }
+
+  .field-hint {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: #6b7280;
+  }
+
   .form-control {
     width: 100%;
     padding: 8px;
     border: 1px solid #ddd;
     border-radius: 4px;
+  }
+
+  .form-control:disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+  }
+
+  .select-loading,
+  .select-error {
+    padding: 10px;
+    text-align: center;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #f9f9f9;
   }
 
   .form-actions {
@@ -158,6 +363,12 @@
     border: none;
     border-radius: 4px;
     cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   .btn-primary {

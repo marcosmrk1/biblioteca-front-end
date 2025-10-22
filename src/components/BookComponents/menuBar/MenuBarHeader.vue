@@ -1,9 +1,9 @@
 <script setup>
   defineProps({
-    userName: { type: String, default: 'Marcos' },
+    userName: { type: String, default: 'Renato' },
     userPhoto: {
       type: String,
-      default: 'https://randomuser.me/api/portraits/men/32.jpg',
+      default: 'https://cdn-icons-png.flaticon.com/512/53/53576.png',
     },
   })
 </script>
