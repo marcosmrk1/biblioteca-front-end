@@ -1,5 +1,31 @@
-# Vue 3 + Vite
+# 📚 Biblioteca — Desafio Vue.js
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+Este projeto foi desenvolvido como parte de um **desafio técnico**, com o objetivo de implementar uma aplicação de **biblioteca virtual**.  
+A meta principal foi **cumprir todos os requisitos solicitados**, exceto a integração com a API em Django (substituída por mocks locais para simulação).
 
-Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
+---
+
+## 🚀 Objetivo do Projeto
+
+A aplicação permite:
+- 📖 **Adicionar novos livros**
+- ✏️ **Editar informações de livros existentes**
+- 🧱 **Gerenciar o estado global** utilizando **Pinia**
+- 🧩 **Reutilizar componentes genéricos** em todo o sistema
+- ⚡ **Simular APIs REST** por meio de dados mockados
+
+---
+
+## 🧰 Tecnologias Utilizadas
+
+| Tecnologia | Descrição |
+|-------------|------------|
+| **Vue 3** | Framework principal da aplicação |
+| **Vite** | Ferramenta de build e dev server |
+| **Pinia** | Gerenciamento de estado global |
+| **TypeScript** | Tipagem estática e segurança de código |
+| **TailwindCSS** | Estilização rápida e responsiva |
+| **Shadcn/UI (opcional)** | Componentes acessíveis e modernos |
+| **Mock Data (response/)** | Simulação de API com dados locais |
+
+ 
