@@ -56,17 +56,14 @@
       showToastError.value = true
     }
 
-    // Se tiver livro para editar, preencher o formulário
     if (props.bookToEdit) {
       loadBookData(props.bookToEdit)
     }
 
-    // Configurar mensagens customizadas de validação
     setupCustomValidationMessages()
   })
 
   function setupCustomValidationMessages() {
-    // Aguardar próximo tick para garantir que os elementos estejam montados
     setTimeout(() => {
       const titleInput = document.getElementById('title') as HTMLInputElement
       const dateInput = document.getElementById('publishDate') as HTMLInputElement
@@ -100,7 +97,6 @@
     }, 100)
   }
 
-  // Observar mudanças no bookToEdit
   watch(
     () => props.bookToEdit,
     (newBook) => {
@@ -140,7 +136,6 @@
     let response
 
     if (isEditMode.value && book.value.id) {
-      // Modo edição
       response = await editBookStore.editBook({
         id: book.value.id,
         title: book.value.title,
@@ -148,7 +143,6 @@
         author: selectedAuthor,
       })
     } else {
-      // Modo criação
       response = await postBookStore.createBook({
         title: book.value.title,
         publishDate: book.value.publishDate,
@@ -194,7 +188,6 @@
     showToastSuccess.value = false
   }
 
-  // Computed para mensagens dinâmicas
   const formTitle = computed(() =>
     isEditMode.value ? 'Editar Livro' : 'Cadastro de Livro',
   )

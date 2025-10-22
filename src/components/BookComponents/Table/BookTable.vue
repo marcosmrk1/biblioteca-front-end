@@ -19,7 +19,6 @@
     () => route.query[OPEN_MODAL_FORM_BOOK],
     (val) => {
       showModal.value = val === 'true'
-      // Resetar bookToEdit quando fechar o modal
       if (!showModal.value) {
         bookToEdit.value = null
       }
@@ -38,7 +37,7 @@
   })
 
   function openModalFormBook() {
-    bookToEdit.value = null // Resetar para modo criação
+    bookToEdit.value = null
     router.push({
       query: {
         ...route.query,
@@ -48,7 +47,7 @@
   }
 
   function openEditModal(book: IMockBook) {
-    bookToEdit.value = book // Definir livro para edição
+    bookToEdit.value = book
     router.push({
       query: {
         ...route.query,
@@ -62,7 +61,7 @@
   }
 
   function closeModal() {
-    bookToEdit.value = null // Limpar ao fechar
+    bookToEdit.value = null
     router.push({
       query: {
         ...route.query,
@@ -71,7 +70,6 @@
     })
   }
 
-  // Função para formatar autores
   function formatAuthors(authors: Array<{ id: number; name: string }>) {
     return authors.map((author) => author.name).join(', ')
   }

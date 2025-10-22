@@ -14,13 +14,12 @@ function delay(ms: number): Promise<void> {
 }
 
 const MOCK_ERROR = false // caso queira simular erro, deixar true
-const DELAY_MS = 1500 // tempo de delay em milissegundos (1.5 segundos)
+const DELAY_MS = 1500
 
 export async function useEditBookApi(
   bookData: BookEditData,
 ): Promise<IResponse<IMockBook>> {
   try {
-    // Simular loading com delay
     await delay(DELAY_MS)
 
     if (MOCK_ERROR) {

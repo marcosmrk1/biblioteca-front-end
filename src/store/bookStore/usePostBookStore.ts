@@ -26,25 +26,19 @@ export const usePostBookStore = defineStore('postBook', {
       this.loading = true
 
       try {
-        // Chamar o service de POST
         const response = await usePostBookApi(bookData)
 
-        // Atualizar estado da store
         this.success = response.success
         this.message = response.message
         this.errors = response.errors || []
         this.statusCode = response.statusCode
 
-        // Se sucesso, salvar no localStorage
         if (response.success && response.data) {
           this.saveToLocalStorage(response.data[0])
         }
 
-        console.log('Book created:', response)
         return response
       } catch (err) {
-        console.log('Error creating book:', err)
-
         const errorMessage = err instanceof Error ? err.message : String(err)
 
         this.success = false
@@ -64,7 +58,6 @@ export const usePostBookStore = defineStore('postBook', {
       }
     },
 
-    // Método para salvar no localStorage
     saveToLocalStorage(newBook: IMockBook) {
       try {
         const existingBooksJson = localStorage.getItem(BOOKS_STORAGE_KEY)

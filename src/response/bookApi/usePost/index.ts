@@ -12,14 +12,13 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-const MOCK_ERROR = false // caso queira simular erro, deixar true
-const DELAY_MS = 1500 // tempo de delay em milissegundos (1.5 segundos)
+const MOCK_ERROR = false
+const DELAY_MS = 1500
 
 export async function usePostBookApi(
   bookData: BookFormData,
 ): Promise<IResponse<IMockBook>> {
   try {
-    // Simular loading com delay
     await delay(DELAY_MS)
 
     if (MOCK_ERROR) {
@@ -37,7 +36,6 @@ export async function usePostBookApi(
       }
     }
 
-    // Gerar ID único (simulando resposta da API)
     const newId = Date.now()
 
     const newBook: IMockBook = {

@@ -31,11 +31,8 @@ export const useAuthorsStore = defineStore('authors', {
         this.statusCode = response.statusCode
         this.meta = response.meta
 
-        console.log('Authors loaded:', response)
         return response
       } catch (err) {
-        console.log('Error loading authors:', err)
-
         const errorMessage = err instanceof Error ? err.message : String(err)
 
         this.data = null
