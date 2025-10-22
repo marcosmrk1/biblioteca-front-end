@@ -73,6 +73,15 @@
   function formatAuthors(authors: Array<{ id: number; name: string }>) {
     return authors.map((author) => author.name).join(', ')
   }
+
+  function formatDate(dateString: string) {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    })
+  }
 </script>
 
 <template>
@@ -105,7 +114,7 @@
         </tr>
         <tr v-else v-for="book in booksStore.data" :key="book.id">
           <td>{{ book.title }}</td>
-          <td>{{ book.publicationDate }}</td>
+          <td>{{ formatDate(book.publicationDate) }}</td>
           <td>{{ formatAuthors(book.author) }}</td>
           <td>
             <button class="btn-edit" @click="openEditModal(book)" title="Editar">
